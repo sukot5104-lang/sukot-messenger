@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
     const online = await fetchOnlineUserIds();
     const res = NextResponse.json({
       ok: true,
+      token, // socket handshake auth (cookie may be stripped by some proxies on WS upgrade)
       online,
       user: {
         id: user.id,

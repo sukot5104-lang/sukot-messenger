@@ -25,9 +25,12 @@ export function AuthView({ onAuthed, mode, onSwitchMode }: AuthViewProps) {
       <div className="w-full max-w-sm relative">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500 via-purple-600 to-fuchsia-600 flex items-center justify-center shadow-[0_0_40px_rgba(139,92,246,0.45)] mb-4">
-            <Sparkles className="w-9 h-9 text-white" strokeWidth={2.2} />
-          </div>
+          { }
+          <img
+            src="/logo.png"
+            alt="SUKOT MESSENGER"
+            className="w-24 h-24 rounded-[26px] shadow-[0_0_44px_rgba(139,92,246,0.5)] mb-4"
+          />
           <h1 className="text-2xl font-black tracking-wide text-white" dir="ltr">
             SUKOT <span className="bg-gradient-to-l from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">MESSENGER</span>
           </h1>

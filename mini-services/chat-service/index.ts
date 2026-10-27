@@ -190,7 +190,15 @@ function sanitizeMessage(m: {
 
 io.use(async (socket, next) => {
   const uid = getUserIdFromSocket(socket);
-  if (!uid) return next(new Error("unauthorized"));
+  // debug: why did auth fail?
+  if (!uid) {
+    const cookieNames = Object.keys(parseCookies(socket.request.headers.cookie));
+    const authKeys = Object.keys(socket.handshake.auth ?? {});
+    console.log(
+      `[auth-debug] reject sid=${socket.id} cookies=[${cookieNames.join(",")}] authKeys=[${authKeys.join(",")}] headers.has-cookie=${!!socket.request.headers.cookie}`
+    );
+    return next(new Error("unauthorized"));
+  }
   try {
     const user = await db.user.findUnique({ where: { id: uid } });
     if (!user || user.deletedAt || user.isBanned)
@@ -282,7 +290,12 @@ io.on("connection", async (socket) => {
           message: sanitizeMessage(message),
           clientId: data?.clientId,
         };
-        io.to(`conv:${conversationId}`).emit("message:new", payload);
+        // deliver via user rooms (reliable even for brand-new conversations —
+        // the other side may not have joined the conv room yet)
+        io.to(`user:${userId}`).emit("message:new", payload);
+        for (const p of participants) {
+          if (p.userId !== userId) io.to(`user:${p.userId}`).emit("message:new", payload);
+        }
         ack?.({ ok: true, ...payload });
       } catch (e) {
         console.error("[socket] message:send error", e);
@@ -292,6 +305,15 @@ io.on("connection", async (socket) => {
   );
 
   // ---- delivered / read receipts ---------------------------------------------
+  async function emitStatus(conversationId: string, userId: string, kind: "delivered" | "read", at: Date) {
+    const participants = await db.participation.findMany({
+      where: { conversationId, deletedAt: null },
+      select: { userId: true },
+    });
+    const payload = { conversationId, userId, kind, at: at.toISOString() };
+    for (const p of participants) io.to(`user:${p.userId}`).emit("message:status", payload);
+  }
+
   socket.on("message:delivered", async (data: { conversationId: string }) => {
     try {
       const conversationId = String(data?.conversationId ?? "");
@@ -301,12 +323,7 @@ io.on("connection", async (socket) => {
         where: { conversationId, userId },
         data: { lastDeliveredAt: now },
       });
-      io.to(`conv:${conversationId}`).emit("message:status", {
-        conversationId,
-        userId,
-        kind: "delivered",
-        at: now.toISOString(),
-      });
+      await emitStatus(conversationId, userId, "delivered", now);
     } catch (e) {
       console.error("[socket] delivered error", e);
     }
@@ -322,13 +339,8 @@ io.on("connection", async (socket) => {
         data: { lastReadAt: now, lastDeliveredAt: now },
       });
       typingUsers.get(conversationId)?.delete(userId);
-      io.to(`conv:${conversationId}`).emit("message:status", {
-        conversationId,
-        userId,
-        kind: "read",
-        at: now.toISOString(),
-      });
-      socket.to(`conv:${conversationId}`).emit("typing", {
+      await emitStatus(conversationId, userId, "read", now);
+      socket.emit("typing", {
         conversationId,
         userId,
         isTyping: false,
@@ -339,7 +351,7 @@ io.on("connection", async (socket) => {
   });
 
   // ---- typing -----------------------------------------------------------------
-  socket.on("typing", (data: { conversationId: string; isTyping: boolean }) => {
+  socket.on("typing", async (data: { conversationId: string; isTyping: boolean }) => {
     try {
       const conversationId = String(data?.conversationId ?? "");
       if (!conversationId) return;
@@ -348,11 +360,23 @@ io.on("connection", async (socket) => {
       if (data.isTyping) set.add(userId);
       else set.delete(userId);
       typingUsers.set(conversationId, set);
-      socket.to(`conv:${conversationId}`).emit("typing", {
+      const payload = {
         conversationId,
         userId,
         isTyping: !!data.isTyping,
-      });
+      };
+      // typing goes to all other participants' user rooms (works for fresh conversations)
+      try {
+        const participants = await db.participation.findMany({
+          where: { conversationId, deletedAt: null },
+          select: { userId: true },
+        });
+        for (const p of participants) {
+          if (p.userId !== userId) io.to(`user:${p.userId}`).emit("typing", payload);
+        }
+      } catch {
+        /* best effort */
+      }
     } catch (e) {
       console.error("[socket] typing error", e);
     }

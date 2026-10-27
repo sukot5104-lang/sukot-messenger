@@ -75,6 +75,7 @@ export function ProfileView({ me, onBack, onLogout, onOpenAdmin, onUserUpdated, 
   const [blocked, setBlocked] = useState<BlockedUser[]>([]);
   const [blockedOpen, setBlockedOpen] = useState(false);
   const [iosHelpOpen, setIosHelpOpen] = useState(false);
+  const [downloadsOpen, setDownloadsOpen] = useState(false);
 
   const loadBlocked = async () => {
     try {
@@ -219,6 +220,12 @@ export function ProfileView({ me, onBack, onLogout, onOpenAdmin, onUserUpdated, 
             }}
           />
           <MenuButton
+            icon={<Download className="w-5 h-5 text-emerald-300" />}
+            title="دانلود مستقیم فایل نصبی"
+            subtitle="اندروید و ویندوز — بدون نیاز به فیلترشکن"
+            onClick={() => setDownloadsOpen(true)}
+          />
+          <MenuButton
             icon={<Ban className="w-5 h-5 text-violet-300" />}
             title="کاربران مسدودشده"
             subtitle="مدیریت فهرست مسدودها"
@@ -233,10 +240,10 @@ export function ProfileView({ me, onBack, onLogout, onOpenAdmin, onUserUpdated, 
           <MenuButton
             icon={<Info className="w-5 h-5 text-violet-300" />}
             title="درباره SUKOT MESSENGER"
-            subtitle="نسخه ۱.۰.۰"
+            subtitle="نسخه ۱.۰.۲"
             onClick={() =>
               toast({
-                title: "SUKOT MESSENGER v1.0.0",
+                title: "SUKOT MESSENGER v1.0.2",
                 description: "پیام‌رسان آنلاین سریع و امن با آیدی اختصاصی — ساخته‌شده توسط Sukot",
               })
             }
@@ -368,6 +375,64 @@ export function ProfileView({ me, onBack, onLogout, onOpenAdmin, onUserUpdated, 
               ))}
             </ul>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* direct downloads dialog */}
+      <Dialog open={downloadsOpen} onOpenChange={setDownloadsOpen}>
+        <DialogContent className="bg-[#140b24] border-[#2a1d45] text-[#ece6f8] max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-right flex items-center gap-2">
+              <Download className="w-5 h-5 text-emerald-300" />
+              دانلود مستقیم فایل نصبی
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <a
+              href="/downloads/SUKOT-Messenger-Android.apk"
+              download
+              className="flex items-center gap-3 p-3 rounded-xl bg-[#0f081d] border border-[#2a1d45] hover:border-emerald-500/50 transition-colors"
+            >
+              <Smartphone className="w-5 h-5 text-emerald-300 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-[13px] text-white">اندروید (APK)</p>
+                <p className="text-[11px] text-[#8d7fb0]" dir="ltr">SUKOT-Messenger-Android.apk — 3.3 MB</p>
+              </div>
+              <Download className="w-4 h-4 text-emerald-300" />
+            </a>
+            <a
+              href="/downloads/SUKOT-Messenger-Setup-Windows.exe"
+              download
+              className="flex items-center gap-3 p-3 rounded-xl bg-[#0f081d] border border-[#2a1d45] hover:border-emerald-500/50 transition-colors"
+            >
+              <Download className="w-5 h-5 text-emerald-300 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-[13px] text-white">ویندوز — نصب‌کننده</p>
+                <p className="text-[11px] text-[#8d7fb0]" dir="ltr">SUKOT-Messenger-Setup-Windows.exe — 78 MB</p>
+              </div>
+              <Download className="w-4 h-4 text-emerald-300" />
+            </a>
+            <a
+              href="/downloads/SUKOT-Messenger-Portable-Windows.exe"
+              download
+              className="flex items-center gap-3 p-3 rounded-xl bg-[#0f081d] border border-[#2a1d45] hover:border-emerald-500/50 transition-colors"
+            >
+              <Download className="w-5 h-5 text-emerald-300 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-[13px] text-white">ویندوز — پرتابل (بدون نصب)</p>
+                <p className="text-[11px] text-[#8d7fb0]" dir="ltr">SUKOT-Messenger-Portable-Windows.exe — 78 MB</p>
+              </div>
+              <Download className="w-4 h-4 text-emerald-300" />
+            </a>
+            <p className="text-[11px] leading-5 text-[#6f6195] pt-1">
+              این فایل‌ها مستقیماً از سرور خود برنامه دانلود می‌شوند و به فیلترشکن نیاز ندارند. پس از دانلود، فایل را باز کنید و نصب را تأیید کنید.
+            </p>
+          </div>
+          <DialogFooter className="flex-row justify-start">
+            <Button onClick={() => setDownloadsOpen(false)} className="bg-gradient-to-l from-violet-600 to-fuchsia-600 text-white">
+              بستن
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

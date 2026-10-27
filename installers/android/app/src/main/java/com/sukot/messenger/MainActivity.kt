@@ -15,11 +15,13 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 
 /**
  * SUKOT MESSENGER — Android wrapper
@@ -60,25 +62,25 @@ class MainActivity : AppCompatActivity() {
             gravity = Gravity.CENTER
             setBackgroundColor(bgDark)
         }
-        val logo = TextView(this).apply {
-            text = "SUKOT"
-            textSize = 44f
-            setTypeface(Typeface.DEFAULT_BOLD)
-            setTextColor(neonPurple)
-            letterSpacing = 0.18f
-            gravity = Gravity.CENTER
+        val logoView = ImageView(this).apply {
+            setImageDrawable(ContextCompat.getDrawable(context, R.drawable.splash_logo))
+            adjustmentViewBounds = true
+        }
+        val logoParams = LinearLayout.LayoutParams(420, 420).apply {
+            gravity = Gravity.CENTER_HORIZONTAL
+            bottomMargin = 40
         }
         val subtitle = TextView(this).apply {
             text = getString(R.string.splash_subtitle)
             textSize = 16f
             setTextColor(textGray)
             gravity = Gravity.CENTER
-            setPadding(0, 24, 0, 64)
+            setPadding(0, 0, 0, 56)
         }
         val spinner = ProgressBar(this).apply {
             indeterminateTintList = android.content.res.ColorStateList.valueOf(neonPurple)
         }
-        splash.addView(logo)
+        splash.addView(logoView, logoParams)
         splash.addView(subtitle)
         splash.addView(spinner)
         root.addView(splash, FrameLayout.LayoutParams(

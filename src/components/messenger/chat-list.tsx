@@ -33,9 +33,12 @@ export function ChatList({
       {/* header */}
       <header className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[#221639]">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center shadow-[0_0_16px_rgba(139,92,246,0.4)]">
-            <Sparkles className="w-5 h-5 text-white" strokeWidth={2.2} />
-          </div>
+          { }
+          <img
+            src="/logo.png"
+            alt="SUKOT"
+            className="w-9 h-9 rounded-xl shadow-[0_0_16px_rgba(139,92,246,0.45)]"
+          />
           <div>
             <h1 className="font-black text-[15px] text-white leading-tight" dir="ltr">
               SUKOT MESSENGER

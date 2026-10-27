@@ -289,19 +289,9 @@ export function ChatView({
     s.timeout(15000).emit(
       "message:send",
       { conversationId, content, clientId },
-      (err: unknown, resp: { ok: boolean; message?: ChatMessage; error?: string }) => {
-        setSending(false);
-        if (err || !resp?.ok) {
-          setMessages((prev) =>
-            prev.map((m) => (m.id === clientId ? { ...m, status: "failed" } : m))
-          );
-          toast({
-            title: err ? "ارسال پیام ناموفق بود" : resp?.error || "ارسال ناموفق",
-            variant: "destructive",
-          });
-          return;
-        }
-        if (resp.message) {
+      async (err: unknown, resp: { ok: boolean; message?: ChatMessage; error?: string }) => {
+        if (!err && resp?.ok && resp.message) {
+          setSending(false);
           setMessages((prev) => {
             const idx = prev.findIndex((m) => m.id === clientId);
             if (idx === -1) {
@@ -313,6 +303,45 @@ export function ChatView({
             return copy;
           });
           onConversationListDirty();
+          return;
+        }
+
+        // Socket failed → REST fallback
+        try {
+          const r = await fetch(`/api/conversations/${conversationId}/messages`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content, clientId }),
+          });
+          const data = (await r.json().catch(() => null)) as {
+            ok?: boolean;
+            message?: ChatMessage;
+            error?: string;
+          } | null;
+          if (!r.ok || !data?.ok || !data.message) {
+            throw new Error(data?.error || "rest-failed");
+          }
+          setSending(false);
+          setMessages((prev) => {
+            const idx = prev.findIndex((m) => m.id === clientId);
+            if (idx === -1) {
+              if (prev.some((m) => m.id === data.message!.id)) return prev;
+              return [...prev, { ...data.message!, status: "sent" }];
+            }
+            const copy = [...prev];
+            copy[idx] = { ...data.message!, status: "sent" };
+            return copy;
+          });
+          onConversationListDirty();
+        } catch {
+          setSending(false);
+          setMessages((prev) =>
+            prev.map((m) => (m.id === clientId ? { ...m, status: "failed" } : m))
+          );
+          toast({
+            title: "ارسال پیام ناموفق بود — اتصال اینترنت را بررسی کنید",
+            variant: "destructive",
+          });
         }
       }
     );

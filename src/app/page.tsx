@@ -7,7 +7,7 @@ import { ChatView } from "@/components/messenger/chat-view";
 import { SearchView } from "@/components/messenger/search-view";
 import { ProfileView } from "@/components/messenger/profile-view";
 import { AdminView } from "@/components/messenger/admin-view";
-import { getSocket, resetSocket } from "@/hooks/use-socket";
+import { getSocket, resetSocket, saveSocketToken, clearSocketToken } from "@/hooks/use-socket";
 import { api } from "@/lib/client";
 import { useToast } from "@/hooks/use-toast";
 import type {
@@ -75,7 +75,9 @@ export default function SukotMessenger() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await api<{ user: PublicUser; online: string[] }>("/api/auth/me");
+        const res = await api<{ token?: string; user: PublicUser; online: string[] }>("/api/auth/me");
+        saveSocketToken(res.token);
+        resetSocket(); // fresh handshake with the fresh token
         setMe(res.user);
         setOnline(new Set(res.online ?? []));
       } catch {
@@ -89,6 +91,7 @@ export default function SukotMessenger() {
   // ---- logout ----
   const logoutLocal = useCallback(() => {
     resetSocket();
+    clearSocketToken();
     setMe(null);
     setConversations([]);
     setActiveConvId(null);
@@ -245,9 +248,11 @@ export default function SukotMessenger() {
     );
     setOnline(new Set(onlineIds ?? []));
     setView("chats");
-    // fetch complete profile right away
-    api<{ user: PublicUser; online: string[] }>("/api/auth/me")
+    // fetch complete profile + fresh socket token right away
+    api<{ token?: string; user: PublicUser; online: string[] }>("/api/auth/me")
       .then((res) => {
+        saveSocketToken(res.token);
+        resetSocket();
         setMe(res.user);
         setOnline(new Set(res.online ?? []));
       })
@@ -268,8 +273,14 @@ export default function SukotMessenger() {
   // ---- boot loader ----
   if (!booted) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-[#0b0614]">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-600 animate-pulse shadow-[0_0_32px_rgba(139,92,246,0.5)]" />
+      <div className="min-h-dvh flex flex-col items-center justify-center bg-[#0b0614]">
+        { }
+        <img
+          src="/logo.png"
+          alt="SUKOT MESSENGER"
+          className="w-32 h-32 rounded-[28px] animate-pulse shadow-[0_0_48px_rgba(139,92,246,0.55)]"
+        />
+        <p className="mt-5 text-sm text-[#8d7fb0]">در حال بارگذاری…</p>
       </div>
     );
   }
@@ -389,9 +400,12 @@ export default function SukotMessenger() {
               ) : (
                 /* desktop empty state */
                 <div className="flex-1 flex flex-col items-center justify-center text-center px-8 bg-[#0b0614]">
-                  <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500 via-purple-600 to-fuchsia-600 flex items-center justify-center shadow-[0_0_40px_rgba(139,92,246,0.35)] mb-5">
-                    <MessageCircle className="w-9 h-9 text-white" />
-                  </div>
+                  { }
+                  <img
+                    src="/logo.png"
+                    alt="SUKOT MESSENGER"
+                    className="w-20 h-20 rounded-[22px] shadow-[0_0_40px_rgba(139,92,246,0.45)] mb-5"
+                  />
                   <h2 className="text-xl font-black text-white" dir="ltr">
                     SUKOT MESSENGER
                   </h2>

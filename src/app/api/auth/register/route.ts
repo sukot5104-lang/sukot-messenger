@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
     const token = signSession(user.id);
     const res = NextResponse.json({
       ok: true,
+      token, // socket handshake auth
       user: { id: user.id, username: user.username, displayName: user.displayName },
     });
     res.cookies.set(SESSION_COOKIE, token, {
