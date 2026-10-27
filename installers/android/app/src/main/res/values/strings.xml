@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ⚠️ آدرس سایت SUKOT MESSENGER خود را اینجا بگذارید (با https) -->
+    <string name="app_url" translatable="false">https://YOUR-SUKOT-SITE.example.com</string>
+    <string name="app_name">SUKOT MESSENGER</string>
+</resources>

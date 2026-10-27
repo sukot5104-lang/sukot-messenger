@@ -1,0 +1,1 @@
+#in proguard-rules.pro

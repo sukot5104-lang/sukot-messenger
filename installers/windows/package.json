@@ -1,0 +1,41 @@
+{
+  "name": "sukot-messenger",
+  "productName": "SUKOT MESSENGER",
+  "version": "1.0.0",
+  "description": "SUKOT MESSENGER — پیام‌رسان آنلاین سریع و امن با آیدی اختصاصی",
+  "main": "main.js",
+  "author": "Sukot",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^31.3.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.sukot.messenger",
+    "productName": "SUKOT MESSENGER",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "splash.html"
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "SUKOT MESSENGER"
+    }
+  }
+}

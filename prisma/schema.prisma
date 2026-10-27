@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// SUKOT MESSENGER — Database Schema
+// ============================================================
+
+model User {
+  id            String    @id @default(cuid())
+  username      String    @unique // Display form, e.g. "Sukot"
+  usernameLower String    @unique // Lowercase form for case-insensitive uniqueness
+  passwordHash  String
+  displayName   String
+  bio           String    @default("")
+  avatarColor   String    @default("#8b5cf6")
+  isVerified    Boolean   @default(false) // Green tick (official/support accounts)
+  isAdmin       Boolean   @default(false)
+  isBanned      Boolean   @default(false)
+  banReason     String    @default("")
+  lastSeen      DateTime  @default(now())
+  deletedAt     DateTime? // Set when account is deleted under "reserve" policy
+  createdAt     DateTime  @default(now())
+
+  participations  Participation[] @relation("userParticipations")
+  messages        Message[]       @relation("senderMessages")
+  blocksMade      Block[]         @relation("blocker")
+  blocksReceived  Block[]         @relation("blocked")
+  reportsMade     Report[]        @relation("reporter")
+  reportsReceived Report[]        @relation("reported")
+}
+
+model Conversation {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  lastMessageAt DateTime @default(now())
+
+  participations Participation[]
+  messages       Message[]
+}
+
+model Participation {
+  id              String    @id @default(cuid())
+  conversationId  String
+  userId          String
+  deletedAt       DateTime? // "delete conversation from my list"
+  lastReadAt      DateTime?
+  lastDeliveredAt DateTime?
+  createdAt       DateTime  @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation("userParticipations", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("senderMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  reporterId String
+  reportedId String
+  reason     String
+  details    String   @default("")
+  status     String   @default("open") // open | resolved | dismissed
+  createdAt  DateTime @default(now())
+
+  reporter User @relation("reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reported User @relation("reported", fields: [reportedId], references: [id], onDelete: Cascade)
+}
+
+// Reserved / protected IDs that can never be registered
+model ReservedId {
+  id        String   @id @default(cuid())
+  nameLower String   @unique
+  note      String   @default("")
+  createdAt DateTime @default(now())
+}
+
+// Key-value app settings (managed by admin panel)
+model Setting {
+  key   String @id
+  value String
+}
