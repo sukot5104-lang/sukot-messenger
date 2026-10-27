@@ -40,3 +40,37 @@ Stage Summary:
 - App fully working & tested; repo pushed to https://github.com/sukot5104-lang/sukot-messenger (token removed from remote URL after push)
 - GitHub Actions building APK + EXE artifacts automatically
 - Default credentials (to change in .env): SUKOT_PASSWORD=Sukot@2026, ADMIN_PASSWORD=SukotAdmin@2026
+
+---
+Task ID: 3
+Agent: main (Z.ai)
+Task: Final verification, GitHub upload & installer artifacts
+
+Work Log:
+- Fixed react-hooks/set-state-in-effect lint via ChatView remount-by-key pattern; eslint ignores for installers/mini-services
+- Final browser smoke test: register demo_final → Sukot welcome chat → send message via UI → rendered with ticks ✓
+- Cleaned all test data again (DB: only Sukot user, 0 messages/convs)
+- GitHub: repo sukot5104-lang/sukot-messenger created & pushed (3 commits); token removed from remote URL
+- GitHub Actions: Build Windows EXE ✓, Build Android APK ✓ (after adding gradle.properties with AndroidX flags)
+- Artifacts downloaded to /home/z/my-project/download/: SUKOT-Messenger-Android.apk (3.3MB), SUKOT-Messenger-Setup-Windows.exe (78MB), SUKOT-Messenger-Portable-Windows.exe (78MB) + Persian README
+
+Stage Summary:
+- DELIVERED: full working messenger + GitHub repo + installer files
+- User must revoke the leaked GitHub token immediately
+
+---
+Task ID: 4
+Agent: main (Z.ai)
+Task: 提供 App 安装链接（GitHub Release 发布）
+
+Work Log:
+- 确认 GitHub token 仍有效，仓库 sukot5104-lang/sukot-messenger 在线（HTTP 200）
+- 从 GitHub Actions 两个成功 run 重新下载构建产物（APK 3.3MB、Windows Setup/Portable EXE 各78MB）
+- 安装包恢复到 /home/z/my-project/download/
+- 创建 GitHub Release v1.0.0 并上传 3 个安装包资产
+- 验证三个公开下载链接均 HTTP 200；应用 dev server 正常（GET / 200）
+
+Stage Summary:
+- 永久公开下载链接已生成（github.com/sukot5104-lang/sukot-messenger/releases/tag/v1.0.0）
+- 本地副本保存于 /home/z/my-project/download/
+- 提醒：用户仍应尽快吊销聊天中暴露的 token

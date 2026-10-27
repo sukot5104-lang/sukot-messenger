@@ -66,3 +66,6 @@ tests/
 download/
 skills/
 *.png.bak
+scripts/ghdl/
+download/
+upload/

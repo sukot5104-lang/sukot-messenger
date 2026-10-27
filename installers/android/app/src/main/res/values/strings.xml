@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- ⚠️ آدرس سایت SUKOT MESSENGER خود را اینجا بگذارید (با https) -->
-    <string name="app_url" translatable="false">https://YOUR-SUKOT-SITE.example.com</string>
+    <!-- 🌐 آدرس سرور SUKOT MESSENGER — برای تغییر سرور فقط همین خط را عوض کنید -->
+    <string name="app_url" translatable="false">https://preview-chat-3fd46f3c-fade-49e4-a7c1-0333d3f54379.space-z.ai</string>
     <string name="app_name">SUKOT MESSENGER</string>
+    <string name="splash_subtitle">پیام‌رسان آنلاین</string>
+    <string name="error_title">اتصال برقرار نشد</string>
+    <string name="error_message">لطفاً اتصال اینترنت (وای‌فای یا داده) را بررسی کنید و دوباره تلاش کنید.</string>
+    <string name="error_retry">تلاش دوباره</string>
 </resources>
