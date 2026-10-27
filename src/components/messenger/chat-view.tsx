@@ -112,14 +112,9 @@ export function ChatView({
   const typingActive = useRef(false);
   const nearBottom = useRef(true);
 
-  // ---- load conversation info + history ----
+  // ---- load conversation info + history (component remounts per conversation via key) ----
   useEffect(() => {
     let alive = true;
-    setLoading(true);
-    setMessages([]);
-    setInfo(null);
-    setOtherReadAt(null);
-    setOtherDeliveredAt(null);
     nearBottom.current = true;
 
     (async () => {

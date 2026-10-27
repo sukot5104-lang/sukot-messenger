@@ -354,6 +354,7 @@ export default function SukotMessenger() {
             >
               {view === "chat" && activeConvId ? (
                 <ChatView
+                  key={activeConvId}
                   me={me}
                   conversationId={activeConvId}
                   typingUserIds={activeTypingUsers}
