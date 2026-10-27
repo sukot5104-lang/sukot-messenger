@@ -74,3 +74,24 @@ Stage Summary:
 - 永久公开下载链接已生成（github.com/sukot5104-lang/sukot-messenger/releases/tag/v1.0.0）
 - 本地副本保存于 /home/z/my-project/download/
 - 提醒：用户仍应尽快吊销聊天中暴露的 token
+
+---
+Task ID: 5
+Agent: main (Z.ai)
+Task: 修复 APK 打开报错（网页不可达）并重新发布 v1.0.1
+
+Work Log:
+- 诊断：APK/Windows 安装包指向占位地址 YOUR-SUKOT-SITE.example.com → ERR_CONNECTION_CLOSED
+- 发现 sandbox 真实 preview URL：preview-chat-3fd46f3c-fade-49e4-a7c1-0333d3f54379.space-z.ai（HTTP 200）
+- 发现数据库被 sandbox 重启重置（Sukot 官方账号/保留ID/设置丢失，仅剩 Skkei 用户）→ 重新运行 seed.ts 恢复
+- agent-browser 端到端验证：登录页渲染 ✓ 注册 demo_link ✓ 主页 ✓ 搜索到 Sukot（绿勾）✓ 聊天发消息 ✓ 截图确认 UI
+- 清理全部测试数据（仅剩官方 Sukot）
+- 重写 MainActivity.kt：启动画面（SUKOT 霓虹 logo）+ 波斯语错误页 + 重试按钮 + 状态栏深色
+- Windows main.js：真实 URL + 断线自动重试（波斯语错误页，5秒循环）
+- push 被拒两次：大文件（ghdl 安装包误入自动提交）→ soft reset 清除；GitHub Push Protection 拦截 token（create-release.sh）→ 改为 GITHUB_TOKEN 环境变量
+- 推送成功 → Actions 构建 APK+EXE 均 success → 下载产物
+- 发布 Release v1.0.1，三个链接均验证 HTTP 200
+
+Stage Summary:
+- v1.0.1 安装包链接已交付用户；APK 现指向当前 sandbox preview URL（会话结束会失效，需用户日后部署固定服务器并改 strings.xml 一行 + GitHub Actions 自动重构建）
+- 教训：.gitignore 已加入 scripts/ghdl/、download/、upload/；token 只通过环境变量传递

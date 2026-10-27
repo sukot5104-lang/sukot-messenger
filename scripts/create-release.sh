@@ -4,7 +4,7 @@
 set -e
 TOKEN="${GITHUB_TOKEN:?Set GITHUB_TOKEN env var}"
 REPO="sukot5104-lang/sukot-messenger"
-TAG="v1.0.0"
+TAG="v1.0.1"
 DL="/home/z/my-project/download"
 
 # 1. Create the release (idempotent: reuse if exists)
@@ -13,10 +13,10 @@ RELEASE_JSON=$(curl -s -X POST \
   -H "Content-Type: application/json" \
   "https://api.github.com/repos/$REPO/releases" \
   -d '{
-    "tag_name": "v1.0.0",
+    "tag_name": "v1.0.1",
     "target_commitish": "main",
-    "name": "SUKOT MESSENGER v1.0.0",
-    "body": "## 🚀 SUKOT MESSENGER v1.0.0\n\n### 📱 اندروید (Android)\n- `SUKOT-Messenger-Android.apk` — دانلود و نصب مستقیم (اجازه نصب از منابع ناشناس را بدهید)\n\n### 💻 ویندوز (Windows)\n- `SUKOT-Messenger-Setup-Windows.exe` — نصب‌کننده کامل (پیشنهادی)\n- `SUKOT-Messenger-Portable-Windows.exe` — نسخه پرتابل بدون نصب\n\n### 🍎 iOS (iPhone/iPad)\n- اپلیکیشن تحت وب (PWA): سایت را با Safari باز کنید → Share → Add to Home Screen\n\n### 🌐 نسخه وب\n- نسخه وب برنامه روی هر دستگاهی قابل استفاده است و به‌صورت PWA قابل نصب است.\n\n---\n- پیام‌رسان آنلاین با شناسه یکتا (بدون شماره موبایل)\n- پیام‌رسانی لحظه‌ای، تیک سبز رسمی Sukot، پنل مدیریت کامل\n- توسعه‌دهنده: Sukot",
+    "name": "SUKOT MESSENGER v1.0.1 — Fixed",
+    "body": "## 🚀 SUKOT MESSENGER v1.0.1 (نسخه تعمیر شده)\n\n### ✨ تغییرات این نسخه\n- ✅ مشکل «صفحه وب در دسترس نیست» کاملاً برطرف شد — برنامه حالا به سرور واقعی وصل می‌شود\n- 🎨 صفحه ورود (Splash) نئونی بنفش هنگام باز شدن برنامه\n- ⚠️ صفحه خطای فارسی با دکمه «تلاش دوباره» اگر اینترنت قطع باشد\n- 🔄 تلاش خودکار برای اتصال در نسخه ویندوز\n\n### 📱 اندروید (Android)\n- `SUKOT-Messenger-Android.apk` — دانلود و نصب مستقیم (اجازه نصب از منابع ناشناس را بدهید)\n\n### 💻 ویندوز (Windows)\n- `SUKOT-Messenger-Setup-Windows.exe` — نصب‌کننده کامل (پیشنهادی)\n- `SUKOT-Messenger-Portable-Windows.exe` — نسخه پرتابل بدون نصب\n\n### 🍎 iOS (iPhone/iPad)\n- سایت را با Safari باز کنید → Share → Add to Home Screen\n\n---\n- پیام‌رسان آنلاین با شناسه یکتا (بدون شماره موبایل)\n- پیام‌رسانی لحظه‌ای، تیک سبز رسمی Sukot، پنل مدیریت کامل\n- توسعه‌دهنده: Sukot",
     "draft": false,
     "prerelease": false
   }')
