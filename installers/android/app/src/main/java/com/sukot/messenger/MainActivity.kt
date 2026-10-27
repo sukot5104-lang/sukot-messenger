@@ -64,7 +64,7 @@ class MainActivity : AppCompatActivity() {
         }
         val logoView = ImageView(this).apply {
             setImageDrawable(ContextCompat.getDrawable(context, R.drawable.splash_logo))
-            adjustmentViewBounds = true
+            adjustViewBounds = true
         }
         val logoParams = LinearLayout.LayoutParams(420, 420).apply {
             gravity = Gravity.CENTER_HORIZONTAL
