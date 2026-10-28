@@ -71,3 +71,4 @@ download/
 upload/
 public/downloads/
 recovered/
+scripts/.secrets.env
