@@ -2,32 +2,45 @@
 
 import { cn } from "@/lib/utils";
 
-/** Circular avatar with the user's initial and stored color */
+/** Circular avatar with the user's initial and stored color.
+ *  Official Sukot account renders the brand logo image instead of an initial. */
+export const OFFICIAL_LOGO_SRC = "/logo.png";
+
+export function isOfficialUser(username?: string | null): boolean {
+  return !!username && username.trim().toLowerCase() === "sukot";
+}
+
 export function Avatar({
   name,
   color,
   size = 44,
   online,
   className,
+  src,
 }: {
   name: string;
   color: string;
   size?: number;
   online?: boolean;
   className?: string;
+  src?: string;
 }) {
   const initial = (name || "?").trim().charAt(0).toUpperCase();
   return (
     <div className={cn("relative shrink-0", className)} style={{ width: size, height: size }}>
       <div
-        className="w-full h-full rounded-full flex items-center justify-center font-bold text-white select-none"
+        className="w-full h-full rounded-full flex items-center justify-center font-bold text-white select-none overflow-hidden"
         style={{
           background: `linear-gradient(135deg, ${color} 0%, #6d28d9 100%)`,
           fontSize: size * 0.42,
           boxShadow: `0 0 ${size / 4}px ${color}55`,
         }}
       >
-        {initial}
+        {src ? (
+          <img src={src} alt={name} className="w-full h-full object-cover" draggable={false} />
+        ) : (
+          initial
+        )}
       </div>
       {online && (
         <span

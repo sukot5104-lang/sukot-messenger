@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, UserName, formatListTime } from "./common";
+import { Avatar, UserName, formatListTime, isOfficialUser, OFFICIAL_LOGO_SRC } from "./common";
 import type { ConversationItem, PublicUser } from "@/lib/types";
 import { Search, ShieldCheck, Sparkles, BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -102,6 +102,7 @@ export function ChatList({
                     color={c.other?.avatarColor ?? "#3f3352"}
                     size={48}
                     online={c.other ? online.has(c.other.id) && !c.other.deleted : false}
+                    src={isOfficialUser(c.other?.username) ? OFFICIAL_LOGO_SRC : undefined}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">

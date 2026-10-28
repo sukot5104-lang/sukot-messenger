@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/client";
 import type { SearchResult } from "@/lib/types";
-import { Avatar, UserName, formatLastSeen } from "./common";
+import { Avatar, UserName, formatLastSeen, isOfficialUser, OFFICIAL_LOGO_SRC } from "./common";
 import {
   ChevronRight,
   Search as SearchIcon,
@@ -102,6 +102,7 @@ export function SearchView({ meId, online, onBack, onOpenConversation }: SearchV
         color={u.avatarColor}
         size={46}
         online={online.has(u.id)}
+        src={isOfficialUser(u.username) ? OFFICIAL_LOGO_SRC : undefined}
       />
       <div className="flex-1 min-w-0">
         <UserName name={u.displayName} verified={u.isVerified} className="font-bold text-[14px] text-[#ece6f8]" />
@@ -160,6 +161,7 @@ export function SearchView({ meId, online, onBack, onOpenConversation }: SearchV
                 color={official.avatarColor}
                 size={52}
                 online={online.has(official.id)}
+                src={isOfficialUser(official.username) ? OFFICIAL_LOGO_SRC : undefined}
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">

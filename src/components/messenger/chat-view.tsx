@@ -41,6 +41,8 @@ import {
   formatTime,
   formatDayLabel,
   formatLastSeen,
+  isOfficialUser,
+  OFFICIAL_LOGO_SRC,
 } from "./common";
 import {
   ChevronRight,
@@ -416,7 +418,7 @@ export function ChatView({
         </button>
         {other ? (
           <>
-            <Avatar name={other.displayName} color={other.avatarColor} size={40} online={!other.deleted} />
+            <Avatar name={other.displayName} color={other.avatarColor} size={40} online={!other.deleted} src={isOfficialUser(other.username) ? OFFICIAL_LOGO_SRC : undefined} />
             <div className="flex-1 min-w-0">
               <UserName
                 name={other.deleted ? "کاربر حذف‌شده" : other.displayName}
