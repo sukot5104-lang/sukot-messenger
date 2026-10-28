@@ -95,3 +95,27 @@ Work Log:
 Stage Summary:
 - v1.0.1 安装包链接已交付用户；APK 现指向当前 sandbox preview URL（会话结束会失效，需用户日后部署固定服务器并改 strings.xml 一行 + GitHub Actions 自动重构建）
 - 教训：.gitignore 已加入 scripts/ghdl/、download/、upload/；token 只通过环境变量传递
+
+---
+Task ID: 6
+Agent: main (Z.ai)
+Task:sandbox revert recovery — restore v1.0.2 code, user logo, DB, admin password Sukotzxcv; verify messaging end-to-end
+
+Work Log:
+- Sandbox rolled back to pre-v1.0.2 snapshot: local git missing 774e9ff/95f9b99, worklog tasks 4-5 lost, scripts/ trimmed, download/ emptied, DB wiped
+- Recovered BOTH user images from local auto-commit fecac31 before reset (upload/*.jpg screenshot + 1254x1254 Sukot neon logo PNG)
+- git reset --hard origin/main -> restored full v1.0.2 (socket user-rooms delivery fix, REST fallback, logo splash, in-app downloads)
+- Re-seeded DB (Sukot official account + 21 reserved IDs + policy=reserve); cleaned all test users afterwards (only Sukot remains)
+- .env: ADMIN_PASSWORD=Sukotzxcv (user request) — Next.js hot-reloaded env
+- Restarted chat-service (was down after revert): socket 3003 + internal bridge 3004 healthy
+- Implemented official-avatar feature: Avatar src prop; Sukot renders /logo.png in chat list, chat header, search results + featured card
+- Optimized logo 1254px/1.7MB -> 640px/506KB for web delivery
+- Verified: tsc clean, eslint clean, register via UI, message send (UI + socket ack), REAL-TIME delivery A->B PASS (scripts/test-realtime.ts), admin login Sukotzxcv + stats OK
+- v1.0.2 release links all HTTP 200; public preview URL 200
+- Pushed 5f528d5 (token via env only, stripped from remote URL after push)
+
+Stage Summary:
+- App fully restored to last-night state + logo-as-Sukot-avatar now actually implemented
+- Admin panel password: Sukotzxcv (from .env)
+- Installer binaries unchanged (v1.0.2 release assets still valid — server-side changes only)
+- User accounts were wiped by sandbox revert -> user must re-register their ID
