@@ -55,7 +55,16 @@ if [ ! -d "$BACKUP_DIR/repo/.git" ]; then
 fi
 
 cp db/custom.db "$BACKUP_DIR/repo/custom.db"
-printf '%s\n' "{\"time\":\"$(date -u '+%%FT%%TZ' 2>/dev/null || date -u '+%FT%TZ')\",\"users\":${USERS:-0}}" > "$BACKUP_DIR/repo/meta.json"
+printf '%s\n' "{\"time\":\"$(date -u '+%FT%TZ')\",\"users\":${USERS:-0}}" > "$BACKUP_DIR/repo/meta.json"
+
+# uploaded chat images (best effort)
+if [ -d public/uploads ] && [ -n "$(ls -A public/uploads 2>/dev/null)" ]; then
+  tar -czf "$BACKUP_DIR/repo/uploads.tar.gz" -C public uploads 2>>"$LOG" \
+    && log "uploads archived ($(ls public/uploads | wc -l) files)" \
+    || log "WARNING: uploads archive failed"
+else
+  rm -f "$BACKUP_DIR/repo/uploads.tar.gz"
+fi
 
 git -C "$BACKUP_DIR/repo" add -A
 if git -C "$BACKUP_DIR/repo" diff --cached --quiet; then

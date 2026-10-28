@@ -54,6 +54,8 @@ import {
   Loader2,
   Sparkles,
   UserRoundX,
+  ImageIcon,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -101,6 +103,9 @@ export function ChatView({
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [pendingImage, setPendingImage] = useState<{ file: File; preview: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [reportReason, setReportReason] = useState("spam");
@@ -260,20 +265,51 @@ export function ChatView({
   };
 
   // ---- send ----
-  const send = () => {
+  const send = async () => {
+    if (sending || uploading) return;
     const content = input.trim();
-    if (!content || sending) return;
+    const hasImage = !!pendingImage;
+    if (!content && !hasImage) return;
     const s = getSocket();
     const clientId =
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
         : `tmp-${Date.now()}-${Math.random()}`;
 
+    let imageUrl: string | null = null;
+    let previewForTemp = "";
+
+    if (hasImage && pendingImage) {
+      // upload first, then send the message with the returned URL
+      setUploading(true);
+      try {
+        const fd = new FormData();
+        fd.append("file", pendingImage.file);
+        const r = await fetch("/api/upload", { method: "POST", body: fd });
+        const data = (await r.json().catch(() => null)) as { ok?: boolean; url?: string; error?: string } | null;
+        if (!r.ok || !data?.ok || !data.url) throw new Error(data?.error || "upload-failed");
+        imageUrl = data.url;
+        previewForTemp = data.url;
+      } catch (e) {
+        setUploading(false);
+        toast({
+          title: "آپلود عکس ناموفق بود — دوباره تلاش کنید",
+          description: e instanceof Error && e.message !== "upload-failed" ? e.message : undefined,
+          variant: "destructive",
+        });
+        return;
+      }
+      setUploading(false);
+      setPendingImage(null);
+    }
+
     const temp: ChatMessage = {
       id: clientId,
       conversationId,
       senderId: me.id,
       content,
+      messageType: hasImage ? "image" : "text",
+      imageUrl: imageUrl ?? (previewForTemp || null),
       createdAt: new Date().toISOString(),
       clientId,
       status: "pending",
@@ -290,7 +326,7 @@ export function ChatView({
 
     s.timeout(15000).emit(
       "message:send",
-      { conversationId, content, clientId },
+      { conversationId, content, clientId, messageType: hasImage ? "image" : "text", imageUrl: imageUrl ?? undefined },
       async (err: unknown, resp: { ok: boolean; message?: ChatMessage; error?: string }) => {
         if (!err && resp?.ok && resp.message) {
           setSending(false);
@@ -313,7 +349,7 @@ export function ChatView({
           const r = await fetch(`/api/conversations/${conversationId}/messages`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content, clientId }),
+            body: JSON.stringify({ content, clientId, messageType: hasImage ? "image" : "text", imageUrl }),
           });
           const data = (await r.json().catch(() => null)) as {
             ok?: boolean;
@@ -510,7 +546,24 @@ export function ChatView({
                         : "bg-[#1e1633] text-[#ece6f8] rounded-br-md border border-[#2a1d45]"
                     )}
                   >
-                    <p className="text-[13.5px] leading-6 whitespace-pre-wrap break-words">{m.content}</p>
+                    {m.messageType === "image" && m.imageUrl ? (
+                      <div className="space-y-1.5">
+                        { }
+                        <img
+                          src={m.imageUrl}
+                          alt="عکس"
+                          loading="lazy"
+                          onClick={() => window.open(m.imageUrl!, "_blank")}
+                          className="rounded-xl max-w-full max-h-72 object-cover cursor-pointer border border-white/10"
+                          draggable={false}
+                        />
+                        {m.content && (
+                          <p className="text-[13.5px] leading-6 whitespace-pre-wrap break-words">{m.content}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-[13.5px] leading-6 whitespace-pre-wrap break-words">{m.content}</p>
+                    )}
                     <div
                       className={cn(
                         "flex items-center gap-1 justify-end mt-0.5",
@@ -559,7 +612,53 @@ export function ChatView({
 
       {/* composer */}
       <div className="px-2 sm:px-3 pb-3 pt-1 bg-[#0b0614]">
+        {pendingImage && (
+          <div className="mb-2 flex items-center gap-2 bg-[#160d2a] border border-[#2a1d45] rounded-xl p-2">
+            { }
+            <img src={pendingImage.preview} alt="پیش‌نمایش" className="w-12 h-12 rounded-lg object-cover" />
+            <span className="flex-1 text-[12px] text-[#8d7fb0] truncate" dir="ltr">
+              {pendingImage.file.name}
+            </span>
+            {uploading ? (
+              <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
+            ) : (
+              <button
+                onClick={() => setPendingImage(null)}
+                aria-label="حذف عکس"
+                className="w-7 h-7 rounded-lg bg-[#2a1d45] flex items-center justify-center text-[#c9bfe4] hover:bg-[#3a2860]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (!f) return;
+            if (f.size > 5 * 1024 * 1024) {
+              toast({ title: "حجم عکس بیش از ۵ مگابایت است", variant: "destructive" });
+              return;
+            }
+            setPendingImage({ file: f, preview: URL.createObjectURL(f) });
+          }}
+        />
         <div className="flex items-end gap-2 bg-[#160d2a] border border-[#2a1d45] focus-within:border-violet-500/60 rounded-2xl px-2 py-1.5 transition-colors">
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={sending || uploading || info?.iBlocked || info?.blockedMe || other?.deleted}
+            size="icon"
+            variant="ghost"
+            aria-label="ارسال عکس"
+            className="shrink-0 w-10 h-10 rounded-xl text-[#8d7fb0] hover:text-violet-300 hover:bg-[#1e1338]"
+          >
+            <ImageIcon className="w-5 h-5" />
+          </Button>
           <Textarea
             value={input}
             onChange={(e) => onInputChange(e.target.value)}
@@ -576,12 +675,16 @@ export function ChatView({
           />
           <Button
             onClick={send}
-            disabled={!input.trim() || sending || info?.iBlocked || info?.blockedMe || other?.deleted}
+            disabled={(!input.trim() && !pendingImage) || sending || uploading || info?.iBlocked || info?.blockedMe || other?.deleted}
             size="icon"
             aria-label="ارسال پیام"
             className="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-bl from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white shadow-[0_0_16px_rgba(139,92,246,0.35)]"
           >
-            <Send className="w-4.5 h-4.5 -scale-x-100" />
+            {sending || uploading ? (
+              <Loader2 className="w-4.5 h-4.5 animate-spin" />
+            ) : (
+              <Send className="w-4.5 h-4.5 -scale-x-100" />
+            )}
           </Button>
         </div>
       </div>

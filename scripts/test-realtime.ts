@@ -22,7 +22,7 @@ async function auth(path: string, payload: object) {
 const rand = Math.floor(Math.random() * 100000);
 const userB = `rtb${rand}`;
 
-const A = await auth("login", { username: "testuser1", password: "Test@1234" });
+const A = await auth("login", { username: "imgtest1", password: "Test@1234" });
 console.log("✔ user A logged in:", A.user.username);
 
 let B;
@@ -70,7 +70,7 @@ await new Promise<void>((resolve, reject) => {
   });
   sA.on("connect", () => {
     console.log("✔ user A socket connected:", sA.id);
-    sA.emit("message:send", { conversationId: conv.conversationId, content: "پیام real-time تست", clientId: "rt-" + rand }, (ack: any) => {
+    sA.emit("message:send", { conversationId: conv.conversationId, content: "عکس تست real-time", clientId: "rt-" + rand, messageType: "image", imageUrl: "/uploads/mvs5vnws90a9a04c1879e54e.png" }, (ack: any) => {
       console.log("✔ send ack ok =", ack?.ok);
       sA.disconnect();
       resolve();

@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
                 id: lastMsg.id,
                 senderId: lastMsg.senderId,
                 content: lastMsg.content.slice(0, 120),
+                messageType: lastMsg.messageType,
                 createdAt: lastMsg.createdAt.toISOString(),
               }
             : null,

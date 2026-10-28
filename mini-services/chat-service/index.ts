@@ -177,6 +177,8 @@ function sanitizeMessage(m: {
   conversationId: string;
   senderId: string;
   content: string;
+  messageType?: string;
+  imageUrl?: string | null;
   createdAt: Date;
 }) {
   return {
@@ -184,9 +186,13 @@ function sanitizeMessage(m: {
     conversationId: m.conversationId,
     senderId: m.senderId,
     content: m.content,
+    messageType: m.messageType ?? "text",
+    imageUrl: m.imageUrl ?? null,
     createdAt: m.createdAt.toISOString(),
   };
 }
+
+const IMAGE_URL_RE = /^\/uploads\/[a-z0-9]+\.(jpg|jpeg|png|webp|gif)$/i;
 
 io.use(async (socket, next) => {
   const uid = getUserIdFromSocket(socket);
@@ -238,7 +244,7 @@ io.on("connection", async (socket) => {
   socket.on(
     "message:send",
     async (
-      data: { conversationId: string; content: string; clientId?: string },
+      data: { conversationId: string; content: string; clientId?: string; messageType?: string; imageUrl?: string },
       ack?: (resp: unknown) => void
     ) => {
       try {
@@ -248,7 +254,16 @@ io.on("connection", async (socket) => {
         }
         const conversationId = String(data?.conversationId ?? "");
         const content = String(data?.content ?? "").trim();
-        if (!conversationId || !content || content.length > 4000) {
+        const messageType = data?.messageType === "image" ? "image" : "text";
+        const imageUrl =
+          messageType === "image" && typeof data?.imageUrl === "string" && IMAGE_URL_RE.test(data.imageUrl)
+            ? data.imageUrl
+            : null;
+        if (messageType === "image" && !imageUrl) {
+          ack?.({ ok: false, error: "آدرس عکس نامعتبر است" });
+          return;
+        }
+        if (!conversationId || (messageType === "text" && !content) || content.length > 4000) {
           ack?.({ ok: false, error: "پیام نامعتبر است" });
           return;
         }
@@ -274,7 +289,7 @@ io.on("connection", async (socket) => {
         }
 
         const message = await db.message.create({
-          data: { conversationId, senderId: userId, content },
+          data: { conversationId, senderId: userId, content, messageType, imageUrl },
         });
         await db.conversation.update({
           where: { id: conversationId },

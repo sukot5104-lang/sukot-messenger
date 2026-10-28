@@ -41,6 +41,17 @@ fi
 
 mkdir -p db
 cp "$TMP/custom.db" db/custom.db
+
+# restore uploaded chat images (best effort)
+if [ -f "$TMP/uploads.tar.gz" ]; then
+  mkdir -p public
+  if tar -xzf "$TMP/uploads.tar.gz" -C public 2>>"$LOG"; then
+    log "uploads restored ($(ls public/uploads 2>/dev/null | wc -l) files)"
+  else
+    log "WARNING: uploads restore failed"
+  fi
+fi
+
 rm -rf "$TMP"
 
 # make sure schema matches current code (in case backup is older)

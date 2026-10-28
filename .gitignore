@@ -73,3 +73,6 @@ public/downloads/
 recovered/
 scripts/.secrets.env
 backup/
+# user uploaded chat images (backed up privately, not in code repo)
+public/uploads/*
+!public/uploads/.gitkeep

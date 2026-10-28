@@ -121,6 +121,10 @@ export function ChatList({
                       <p className="text-[12.5px] text-[#8d7fb0] truncate">
                         {!c.lastMessage
                           ? "گفت‌وگو را شروع کنید"
+                          : c.lastMessage.messageType === "image"
+                          ? c.lastMessage.senderId === me.id
+                            ? "شما: 📷 عکس"
+                            : "📷 عکس"
                           : c.lastMessage.senderId === me.id
                           ? `شما: ${c.lastMessage.content}`
                           : c.lastMessage.content}

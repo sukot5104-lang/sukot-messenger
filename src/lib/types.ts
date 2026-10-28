@@ -15,6 +15,8 @@ export interface ChatMessage {
   conversationId: string;
   senderId: string;
   content: string;
+  messageType?: "text" | "image";
+  imageUrl?: string | null;
   createdAt: string;
   clientId?: string;
   status?: "pending" | "sent" | "failed";
@@ -35,7 +37,7 @@ export interface ConversationItem {
   conversationId: string;
   lastMessageAt: string;
   unread: number;
-  lastMessage: { id: string; senderId: string; content: string; createdAt: string } | null;
+  lastMessage: { id: string; senderId: string; content: string; messageType?: string; createdAt: string } | null;
   other: ConvOther | null;
   otherLastReadAt: string | null;
   otherLastDeliveredAt: string | null;

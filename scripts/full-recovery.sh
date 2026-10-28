@@ -51,7 +51,7 @@ if [ "${CUR:-0}" -le 0 ] 2>/dev/null; then
 fi
 
 # ---- 4) schema (idempotent) ---------------------------------
-mkdir -p db
+mkdir -p db public/uploads
 if bunx prisma db push --skip-generate >>"$LOG" 2>&1; then
   log "schema ok"
 else

@@ -22,12 +22,24 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     const body = (await req.json().catch(() => null)) as {
       content?: unknown;
       clientId?: unknown;
+      messageType?: unknown;
+      imageUrl?: unknown;
     } | null;
     const content = String(body?.content ?? "").trim();
     const clientId =
       typeof body?.clientId === "string" ? body.clientId : undefined;
-    if (!content || content.length > 4000)
+    const messageType = body?.messageType === "image" ? "image" : "text";
+    const IMAGE_URL_RE = /^\/uploads\/[a-z0-9]+\.(jpg|jpeg|png|webp|gif)$/i;
+    const imageUrl =
+      messageType === "image" && typeof body?.imageUrl === "string" && IMAGE_URL_RE.test(body.imageUrl)
+        ? body.imageUrl
+        : null;
+    if (messageType === "image" && !imageUrl)
+      return jsonError("آدرس عکس نامعتبر است", 400);
+    if (messageType === "text" && !content)
       return jsonError("پیام نامعتبر است", 400);
+    if (content.length > 4000)
+      return jsonError("پیام بیش از حد طولانی است", 400);
 
     const myPart = await db.participation.findFirst({
       where: { conversationId: id, userId: me.id, deletedAt: null },
@@ -57,7 +69,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     }
 
     const message = await db.message.create({
-      data: { conversationId: id, senderId: me.id, content },
+      data: { conversationId: id, senderId: me.id, content, messageType, imageUrl },
     });
     await db.conversation.update({
       where: { id },
@@ -74,6 +86,8 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       conversationId: message.conversationId,
       senderId: message.senderId,
       content: message.content,
+      messageType: message.messageType,
+      imageUrl: message.imageUrl,
       createdAt: message.createdAt.toISOString(),
     };
     // live delivery to connected clients via user rooms (best-effort)
@@ -123,6 +137,8 @@ export async function GET(req: NextRequest, ctx: Ctx) {
           conversationId: m.conversationId,
           senderId: m.senderId,
           content: m.content,
+          messageType: m.messageType,
+          imageUrl: m.imageUrl,
           createdAt: m.createdAt.toISOString(),
         }))
         .reverse(),
