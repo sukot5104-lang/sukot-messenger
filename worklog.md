@@ -119,3 +119,21 @@ Stage Summary:
 - Admin panel password: Sukotzxcv (from .env)
 - Installer binaries unchanged (v1.0.2 release assets still valid — server-side changes only)
 - User accounts were wiped by sandbox revert -> user must re-register their ID
+
+---
+Task ID: 7
+Agent: main (Z.ai)
+Task: sandbox restart #2 recovery + set official Sukot password to owner-chosen value
+
+Work Log:
+- Sandbox restarted again: DB wiped, .env reverted, chat-service down, recovered/ dir lost
+- .env restored (ADMIN + SUKOT_PASSWORD now owner-chosen values)
+- Re-seeded DB with SUKOT_PASSWORD env -> official account created directly with owner password
+- Restarted chat-service (3003/3004 healthy), Next.js env hot-reloaded
+- Added scripts/set-sukot-password.ts (argv-based, no secrets in repo)
+- Verified: REST login sukot + owner password -> ok:true token; admin login ok; UI form login PASS (screenshot)
+- No plaintext passwords committed to repo
+
+Stage Summary:
+- Official Sukot account now uses owner-chosen password (email-format string)
+- Recurring risk: every sandbox reset wipes DB -> users must re-register; seed + .env restore is the documented recovery path
