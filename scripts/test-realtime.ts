@@ -22,8 +22,14 @@ async function auth(path: string, payload: object) {
 const rand = Math.floor(Math.random() * 100000);
 const userB = `rtb${rand}`;
 
-const A = await auth("login", { username: "imgtest1", password: "Test@1234" });
-console.log("✔ user A logged in:", A.user.username);
+let A;
+try {
+  A = await auth("register", { username: `rtba${rand}`, password: "Test@1234", displayName: "کاربر A تست" });
+  console.log("✔ user A registered:", A.user.username);
+} catch {
+  A = await auth("login", { username: `rtba${rand}`, password: "Test@1234" });
+  console.log("✔ user A logged in:", A.user.username);
+}
 
 let B;
 try {

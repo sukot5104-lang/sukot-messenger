@@ -197,3 +197,25 @@ Work Log:
 Stage Summary:
 - Image sharing fully live; all previous features intact; backup covers DB + uploaded images
 - Everything pushed to GitHub (2f876f5)
+
+---
+
+Task ID: 11
+Agent: main (Z.ai) — scheduled self-heal run (job 480744)
+Task: sandbox reset at 14:30 UTC — heal, recover data, close backup-safety holes
+
+Work Log:
+- Health check: web 200 / chat ok, but DB was seed-only (1 user, 0 msgs): reset had wiped scripts/.secrets.env -> restore+backup aborted ("no GITHUB_TOKEN"), seed ran with default passwords
+- Rebuilt .env + scripts/.secrets.env with owner values (mrzban679@gmail.com both passwords)
+- PATCH db-restore.sh: seed-only DB (just Sukot, 0 msgs, via new scripts/db-stats.ts) may be overwritten by backup; real user data never touched
+- PATCH db-backup.sh: (1) SAFETY — refuses to push a DB with fewer users than remote backup's meta.json (never overwrite richer backup); (2) reattaches freshly-init'd local repo to origin/main history so pushes fast-forward after resets; (3) uploads self-heal — extracts uploads.tar.gz from backup when local public/uploads is empty, and never stages deletion of backed-up images
+- PATCH full-recovery.sh: .env rebuilt with owner passwords instead of old defaults, repairs incomplete .env (missing ADMIN/SUKOT_PASSWORD), step-3 now always calls db-restore.sh (script decides)
+- FIXED LATENT BUG: commit 2f876f5 shipped chat-view calling /api/upload but the route file was never committed (404 — image send was broken). Recreated src/app/api/upload/route.ts (auth, 10/min rate limit, 5MB cap, magic-byte jpg/png/webp/gif, random hex name, saves public/uploads)
+- Restored DB from private backup: 3 users (reza, shshdhdh, sukot) back; restarted chat-service; touch .env for env reload
+- Verified: sukot login ok:true / admin login ok:true (mrzban679@gmail.com) / upload 200 + served 200 / fake png rejected 415 / end-to-end image message persisted (messageType=image) / realtime socket test PASS after test script patched to self-register user A
+- cleanup-tests-targeted: keep-set now includes shshdhdh (real username); removed imgtest777 + rtb* test users & orphan convs
+- Fresh backup pushed: 3 users
+- TODO next runs: if GITHUB_TOKEN ever missing again, rebuild scripts/.secrets.env from cron prompt values FIRST, then run full-recovery.sh
+
+Stage Summary:
+- All user data recovered after reset; upload endpoint restored; backup system now reset-proof and cannot degrade good backups

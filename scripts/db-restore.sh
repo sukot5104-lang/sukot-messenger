@@ -19,11 +19,18 @@ if [ -z "${GITHUB_TOKEN:-}" ]; then
   echo "restore failed: no token"; exit 1
 fi
 
-# local DB already has data? never touch it
-CUR=$(DATABASE_URL="file:/home/z/my-project/db/custom.db" bun run scripts/count-users.ts 2>>"$LOG" | tail -n 1 | tr -dc '0-9')
-if [ "${CUR:-0}" -gt 0 ] 2>/dev/null; then
-  log "local DB has ${CUR} users — restore not needed"
+# local DB already has real data? never touch it.
+# EXCEPTION: a "seed-only" DB (just the auto-created Sukot account, no messages)
+# is a full-recovery artifact — safe to overwrite with the real backup.
+STATS=$(DATABASE_URL="file:/home/z/my-project/db/custom.db" bun run scripts/db-stats.ts 2>>"$LOG" | tail -n 1)
+CUR=$(echo "$STATS" | grep -o 'USERS=[0-9]*' | cut -d= -f2)
+SEEDONLY=$(echo "$STATS" | grep -o 'SEEDONLY=[a-z]*' | cut -d= -f2)
+if [ "${CUR:-0}" -gt 0 ] 2>/dev/null && [ "${SEEDONLY:-no}" != "yes" ]; then
+  log "local DB has ${CUR} real users — restore not needed"
   echo "restore skipped (local db not empty)"; exit 0
+fi
+if [ "${SEEDONLY:-no}" = "yes" ]; then
+  log "seed-only DB detected (${CUR} user, no messages) — overwrite with backup is safe"
 fi
 
 mkdir -p "$BACKUP_DIR"

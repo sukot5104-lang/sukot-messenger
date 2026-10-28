@@ -54,16 +54,47 @@ if [ ! -d "$BACKUP_DIR/repo/.git" ]; then
   log "backup repo initialized"
 fi
 
+# reattach to remote history if the local backup repo was recreated
+# (sandbox reset) so pushes fast-forward instead of being rejected
+if git -C "$BACKUP_DIR/repo" remote get-url origin >/dev/null 2>&1; then
+  if git -C "$BACKUP_DIR/repo" fetch -q origin main 2>>"$LOG"; then
+    git -C "$BACKUP_DIR/repo" reset -q --soft origin/main 2>>"$LOG" || true
+  fi
+fi
+
+# uploads self-heal: local images lost (reset) but backup repo has them?
+HAS_UPLOADS=$(ls -A public/uploads 2>/dev/null | grep -v '^\.gitkeep$' | head -n 1)
+if [ -z "${HAS_UPLOADS:-}" ] && git -C "$BACKUP_DIR/repo" cat-file -e origin/main:uploads.tar.gz 2>/dev/null; then
+  mkdir -p public/uploads
+  if git -C "$BACKUP_DIR/repo" show origin/main:uploads.tar.gz 2>>"$LOG" | tar -xz -C public 2>>"$LOG"; then
+    log "uploads self-healed from backup repo"
+  else
+    log "WARNING: uploads self-heal failed"
+  fi
+fi
+
 cp db/custom.db "$BACKUP_DIR/repo/custom.db"
 printf '%s\n' "{\"time\":\"$(date -u '+%FT%TZ')\",\"users\":${USERS:-0}}" > "$BACKUP_DIR/repo/meta.json"
 
 # uploaded chat images (best effort)
-if [ -d public/uploads ] && [ -n "$(ls -A public/uploads 2>/dev/null)" ]; then
+HAS_UPLOADS=$(ls -A public/uploads 2>/dev/null | grep -v '^\.gitkeep$' | head -n 1)
+if [ -n "${HAS_UPLOADS:-}" ]; then
   tar -czf "$BACKUP_DIR/repo/uploads.tar.gz" -C public uploads 2>>"$LOG" \
     && log "uploads archived ($(ls public/uploads | wc -l) files)" \
     || log "WARNING: uploads archive failed"
+elif git -C "$BACKUP_DIR/repo" cat-file -e origin/main:uploads.tar.gz 2>/dev/null; then
+  # keep the remote archive — do NOT stage a deletion of backed-up images
+  git -C "$BACKUP_DIR/repo" show origin/main:uploads.tar.gz > "$BACKUP_DIR/repo/uploads.tar.gz" 2>>"$LOG" || true
 else
   rm -f "$BACKUP_DIR/repo/uploads.tar.gz"
+fi
+
+# SAFETY: never overwrite a richer backup with a poorer DB
+REMOTE_USERS=$(git -C "$BACKUP_DIR/repo" show origin/main:meta.json 2>/dev/null | grep -o '"users":[0-9]*' | grep -o '[0-9]*' | head -n 1)
+if [ -n "${REMOTE_USERS:-}" ] && [ "${USERS:-0}" -lt "${REMOTE_USERS}" ] 2>/dev/null; then
+  log "SAFETY: local DB (${USERS} users) poorer than remote backup (${REMOTE_USERS} users) — refusing to overwrite"
+  echo "backup skipped (local db poorer than backup)"
+  exit 0
 fi
 
 git -C "$BACKUP_DIR/repo" add -A

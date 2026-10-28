@@ -68,7 +68,7 @@ skills/
 *.png.bak
 scripts/ghdl/
 download/
-upload/
+/upload/
 public/downloads/
 recovered/
 scripts/.secrets.env

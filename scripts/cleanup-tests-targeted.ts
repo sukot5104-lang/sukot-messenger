@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 const p = new PrismaClient();
 
 const TEST_PREFIXES = ["imgtest", "rtb", "testuser", "demo"];
-const keep = new Set(["sukot", "reza", "shshshdhdh"]);
+const keep = new Set(["sukot", "reza", "shshshdhdh", "shshdhdh"]);
 
 const users = await p.user.findMany({ select: { id: true, usernameLower: true } });
 let removed = 0;

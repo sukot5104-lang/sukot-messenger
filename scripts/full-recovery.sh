@@ -14,20 +14,26 @@ LOG=/home/z/my-project/recovery.log
 log(){ echo "[$(date '+%F %T')] $*" >> "$LOG"; }
 
 # ---- 1) .env ------------------------------------------------
-if [ ! -f .env ]; then
+# Owner-chosen credentials (also mirrored in scripts/.secrets.env when present).
+OWNER_PASSWORD="mrzban679@gmail.com"
+ENV_OK=1
+if [ ! -f .env ]; then ENV_OK=0; fi
+if [ -f .env ] && ! grep -q '^ADMIN_PASSWORD=' .env; then ENV_OK=0; fi
+if [ -f .env ] && ! grep -q '^SUKOT_PASSWORD=' .env; then ENV_OK=0; fi
+if [ "$ENV_OK" = "0" ]; then
   if [ -f scripts/.secrets.env ]; then
     {
       echo "DATABASE_URL=file:/home/z/my-project/db/custom.db"
-      cat scripts/.secrets.env
+      grep -E '^(ADMIN_PASSWORD|SUKOT_PASSWORD)=' scripts/.secrets.env || true
     } > .env
-    log ".env recreated from scripts/.secrets.env"
+    log ".env (re)built from scripts/.secrets.env"
   else
-    cat > .env <<'ENVEOF'
+    cat > .env <<ENVEOF
 DATABASE_URL=file:/home/z/my-project/db/custom.db
-ADMIN_PASSWORD=SukotAdmin@2026
-SUKOT_PASSWORD=Sukot@2026
+ADMIN_PASSWORD=${OWNER_PASSWORD}
+SUKOT_PASSWORD=${OWNER_PASSWORD}
 ENVEOF
-    log "WARNING: .env recreated with DEFAULT passwords (scripts/.secrets.env missing)"
+    log "WARNING: .env rebuilt with owner passwords (scripts/.secrets.env missing — scheduled agent must restore it with GITHUB_TOKEN)"
   fi
 fi
 
@@ -43,12 +49,10 @@ if [ ! -d node_modules/.prisma/client ]; then
   bunx prisma generate >>"$LOG" 2>&1
 fi
 
-# ---- 3) restore DB from private backup if local is empty ----
-CUR=$(bun run scripts/count-users.ts 2>>"$LOG" | tail -n 1 | tr -dc '0-9')
-if [ "${CUR:-0}" -le 0 ] 2>/dev/null; then
-  log "local DB empty -> trying private backup restore"
-  bash scripts/db-restore.sh >>"$LOG" 2>&1 || log "restore attempt failed (continuing)"
-fi
+# ---- 3) restore DB from private backup ----------------------
+# db-restore.sh itself decides: empty DB -> restore; seed-only DB -> safe
+# overwrite with backup; real user data -> never touched.
+bash scripts/db-restore.sh >>"$LOG" 2>&1 || log "restore attempt failed (continuing)"
 
 # ---- 4) schema (idempotent) ---------------------------------
 mkdir -p db public/uploads
@@ -62,7 +66,7 @@ fi
 N=$(bun run scripts/count-users.ts 2>>"$LOG" | tail -n 1 | tr -dc '0-9')
 if [ "${N:-0}" -le 0 ] 2>/dev/null; then
   log "DB empty -> seeding official data"
-  SUKOT_PASSWORD="${SUKOT_PASSWORD:-Sukot@2026}" bun run scripts/seed.ts >>"$LOG" 2>&1 \
+  SUKOT_PASSWORD="${SUKOT_PASSWORD:-mrzban679@gmail.com}" bun run scripts/seed.ts >>"$LOG" 2>&1 \
     && log "seed done (Sukot account + reserved IDs + settings)" \
     || log "ERROR: seed failed"
 else
