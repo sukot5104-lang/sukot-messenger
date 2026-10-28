@@ -72,3 +72,4 @@ upload/
 public/downloads/
 recovered/
 scripts/.secrets.env
+backup/

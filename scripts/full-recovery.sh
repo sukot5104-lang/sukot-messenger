@@ -43,7 +43,14 @@ if [ ! -d node_modules/.prisma/client ]; then
   bunx prisma generate >>"$LOG" 2>&1
 fi
 
-# ---- 3) schema (idempotent) ---------------------------------
+# ---- 3) restore DB from private backup if local is empty ----
+CUR=$(bun run scripts/count-users.ts 2>>"$LOG" | tail -n 1 | tr -dc '0-9')
+if [ "${CUR:-0}" -le 0 ] 2>/dev/null; then
+  log "local DB empty -> trying private backup restore"
+  bash scripts/db-restore.sh >>"$LOG" 2>&1 || log "restore attempt failed (continuing)"
+fi
+
+# ---- 4) schema (idempotent) ---------------------------------
 mkdir -p db
 if bunx prisma db push --skip-generate >>"$LOG" 2>&1; then
   log "schema ok"
@@ -51,7 +58,7 @@ else
   log "ERROR: prisma db push failed"
 fi
 
-# ---- 4) seed if DB is empty ---------------------------------
+# ---- 5) seed if DB is empty ---------------------------------
 N=$(bun run scripts/count-users.ts 2>>"$LOG" | tail -n 1 | tr -dc '0-9')
 if [ "${N:-0}" -le 0 ] 2>/dev/null; then
   log "DB empty -> seeding official data"
@@ -62,7 +69,7 @@ else
   log "DB ok (${N} users) — seed skipped"
 fi
 
-# ---- 5) chat-service ----------------------------------------
+# ---- 6) chat-service ----------------------------------------
 OK=""
 for i in 1 2 3 4 5; do
   if curl -s -m 2 http://localhost:3004/internal/health 2>/dev/null | grep -q '"ok":true'; then OK=1; break; fi
@@ -80,7 +87,11 @@ else
   log "chat-service ok"
 fi
 
-# ---- 6) report ----------------------------------------------
+# ---- 7) backup current state (best effort) ------------------
+timeout 90 bash scripts/db-backup.sh >>"$LOG" 2>&1 \
+  || log "backup attempt failed/timed out (non-fatal)"
+
+# ---- 8) report ----------------------------------------------
 CODE=$(curl -s -o /dev/null -w '%{http_code}' -m 3 http://localhost:3000 2>/dev/null || true)
 log "recovery finished (web:${CODE:-?} users:${N:-0})"
 echo "recovery complete: web=${CODE:-?} users=${N:-0}"
