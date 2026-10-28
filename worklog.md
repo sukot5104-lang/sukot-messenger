@@ -154,3 +154,24 @@ Work Log:
 Stage Summary:
 - Reset resilience: code+logo safe on GitHub; infra auto-restores in seconds on boot; periodic agent self-heal every 6h
 - Remaining gap: regular user accounts still lost on a full disk revert (offer: automatic DB backup or permanent host later)
+
+---
+Task ID: 9
+Agent: main (Z.ai)
+Task: automatic DB backup so user accounts survive resets (user request)
+
+Work Log:
+- Created PRIVATE repo sukot5104-lang/sukot-db-backup (201, private:true)
+- scripts/db-checkpoint.ts: SQLite WAL checkpoint for consistent snapshot
+- scripts/db-backup.sh: checkpoint -> copy db -> commit+push to private repo; lockfile; skips empty DB / no-change pushes; token from scripts/.secrets.env
+- scripts/db-restore.sh: clones private backup, restores ONLY if local DB empty (never overwrites live data), then prisma db push to sync schema
+- full-recovery.sh: new step 3 (restore-if-empty before schema/seed) + step 7 (best-effort backup after healing)
+- Fixed lock-dir mkdir bug (mkdir -p before lock)
+- Verified: backup pushed (3 users: reza, Shshshdhdh, Sukot; 106KB), remote contents checked, clone test = 3 users OK, restore skips on non-empty local, full recovery e2e OK
+- Cron job recreated (480657, every 6h Asia/Tehran, high priority): health check + backup + self-heal incl. .env/.secrets recreation + private-repo knowledge
+- Token stored only in gitignored scripts/.secrets.env + private cron prompt; nothing secret in pushed code
+
+Stage Summary:
+- User accounts + messages now survive full disk reverts (backup every 6h + on every boot)
+- Restore is safe: only fills empty DB, never clobbers newer local data
+- If user rotates the GitHub token, backup needs the new token (told user)
