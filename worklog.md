@@ -137,3 +137,20 @@ Work Log:
 Stage Summary:
 - Official Sukot account now uses owner-chosen password (email-format string)
 - Recurring risk: every sandbox reset wipes DB -> users must re-register; seed + .env restore is the documented recovery path
+
+---
+Task ID: 8
+Agent: main (Z.ai)
+Task: self-recovery system so server resets stop breaking the app
+
+Work Log:
+- Built scripts/full-recovery.sh: on every boot restores .env (from gitignored scripts/.secrets.env), prisma schema (db push, idempotent), seeds official data ONLY if user table empty, restarts chat-service if health fails; logs to recovery.log
+- Hooked into package.json "dev" -> runs automatically before next dev on every sandbox boot
+- Both paths tested: happy path (3 users -> seed skipped) and fresh-DB path (scratch db -> db push + seed -> count=1)
+- Real users exist now (reza, Shshshdhdh) — cleanup scripts must never run again except on explicit request
+- Created scheduled health-check agent job (cron, every 6h, Asia/Tehran, priority high): checks web+chat-service+DB+Sukot login, self-heals (git sync, .env rewrite, recovery script, dev boot), never deletes data, never commits secrets
+- No secrets in repo: passwords only in .env / .secrets.env (gitignored) / private cron prompt
+
+Stage Summary:
+- Reset resilience: code+logo safe on GitHub; infra auto-restores in seconds on boot; periodic agent self-heal every 6h
+- Remaining gap: regular user accounts still lost on a full disk revert (offer: automatic DB backup or permanent host later)
