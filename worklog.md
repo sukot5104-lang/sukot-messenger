@@ -175,3 +175,25 @@ Stage Summary:
 - User accounts + messages now survive full disk reverts (backup every 6h + on every boot)
 - Restore is safe: only fills empty DB, never clobbers newer local data
 - If user rotates the GitHub token, backup needs the new token (told user)
+
+---
+Task ID: 10
+Agent: main (Z.ai)
+Task: admin password -> owner email-format value + image sharing feature
+
+Work Log:
+- ADMIN_PASSWORD changed to mrzban679@gmail.com in .env + scripts/.secrets.env; verified via API; cron job recreated (480744) with new value
+- Prisma Message: added messageType ("text"|"image", default text) + imageUrl? ; db push additive (no data loss) + generate
+- New POST /api/upload: auth required, rate limit 12/min, 5MB cap, magic-byte signature check (jpg/png/webp/gif — rejects fake extensions), random filename, stored in public/uploads
+- chat-service message:send: accepts messageType/imageUrl (validates /^\/uploads\/[a-z0-9]+\.(ext)$/), includes both in message:new payload
+- REST messages route + conversations list lastMessage + GET history: include messageType/imageUrl
+- ChatView: attach button (ImageIcon), hidden file input, preview bar with remove, upload-then-send flow, optimistic temp message, image bubble (click opens full size) + caption, spinner on send button; chat list shows «📷 عکس»
+- Backup: db-backup.sh archives public/uploads -> uploads.tar.gz; db-restore.sh extracts on restore; full-recovery mkdir uploads
+- Verified: upload via curl OK; fake-image rejected; 6MB rejected; UI flow register -> Sukot chat -> pick image -> preview -> send -> bubble with caption + ticks (screenshots t9-t12); DB persisted (type=image, img path); real-time socket delivery of image message PASS; backup pushed incl. uploads (2 files)
+- Cleaned test accounts (imgtest1, rtb*) via targeted cleanup; real users reza/shshdhdh kept
+- Note: HMR Fast Refresh reset component state mid-test once (dev artifact, not a bug)
+- Dev server restart quirk: nohup bun run dev must use subshell pattern to survive tool sessions
+
+Stage Summary:
+- Image sharing fully live; all previous features intact; backup covers DB + uploaded images
+- Everything pushed to GitHub (2f876f5)
