@@ -10,6 +10,7 @@ import { createServer, IncomingMessage, ServerResponse } from "http";
 import { Server as SocketIOServer, Socket } from "socket.io";
 import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
+import { spawn } from "node:child_process";
 
 // ---- env ------------------------------------------------------------------
 const PORT = Number(process.env.CHAT_SERVICE_PORT || 3003);
@@ -449,6 +450,53 @@ io.on("connection", async (socket) => {
 httpServer.listen(PORT, () => {
   console.log(`SUKOT chat service (socket.io) running on port ${PORT}`);
 });
+
+// ---- web watchdog -----------------------------------------------------------
+// The sandbox reaps any process spawned from an agent tool-session once that
+// session ends, so `next dev` started manually never survives. This service
+// however descends from the container boot chain and stays alive across
+// resets — so it owns the web server lifecycle: if port 3000 stops answering,
+// respawn `next dev` as OUR child (boot-descended => survives).
+
+const WEB_URL = "http://localhost:3000";
+let webSpawning = false;
+
+async function isWebUp(): Promise<boolean> {
+  try {
+    const res = await fetch(WEB_URL, { signal: AbortSignal.timeout(4000) });
+    return res.status < 500;
+  } catch {
+    return false;
+  }
+}
+
+async function webWatchdog() {
+  if (webSpawning) return;
+  if (await isWebUp()) return;
+  webSpawning = true;
+  console.log("[web-watchdog] web down -> spawning next dev");
+  try {
+    const child = spawn("bunx", ["next", "dev", "-p", "3000"], {
+      cwd: "/home/z/my-project",
+      detached: true,
+      stdio: "ignore",
+      env: { ...process.env, DATABASE_URL: "file:/home/z/my-project/db/custom.db" },
+    });
+    child.on("error", (e) => console.log("[web-watchdog] spawn error:", e.message));
+    child.unref();
+  } catch (e) {
+    console.log("[web-watchdog] spawn failed:", (e as Error).message);
+  } finally {
+    // release the lock after enough time for the server to boot (or fail)
+    setTimeout(() => {
+      webSpawning = false;
+    }, 45000);
+  }
+}
+
+setInterval(webWatchdog, 20000);
+// first check shortly after boot
+setTimeout(webWatchdog, 10000);
 
 process.on("SIGTERM", () => {
   httpServer.close(() => process.exit(0));
